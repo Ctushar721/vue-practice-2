@@ -9,24 +9,26 @@ const users_list_og = [
 ]
 const users = ref(users_list_og);
 
+const filters = ['All', ...new Set(users_list_og.map(user => user.department))];
+
 const selectedDepartment = ref('All');
 
 function updateFilter(filter) {
-    selectedDepartment.value = filter.name;
-    console.log(filter.name);
+    selectedDepartment.value = filter;
+    console.log(filter);
     console.log('Updating list');
     updateList(filter);
 }
 
 function updateList(filter) {
-    users.value = users_list_og.filter(user => ( filter.name === 'All' ? true : user.department === filter.name));
+    users.value = users_list_og.filter(user => ( filter === 'All' ? true : user.department === filter));
 }
 </script>
 
 <template>
     <div>
         <h1>Users List</h1>
-        <Filters @update-filter="updateFilter" />
+        <Filters :filters="filters" @update-filter="updateFilter" />
         <p>The current filter is: {{ selectedDepartment }}</p>
         <div class="users-list">
             <div class="header">
