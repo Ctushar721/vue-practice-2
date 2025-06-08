@@ -5,6 +5,10 @@ const props = defineProps({
     filters: {
         type: Array,
         required: true
+    },
+    selectedFilter: {
+        type: String,
+        required: true
     }
 });
 
@@ -25,6 +29,7 @@ function onChange(filter) {
                 {{ filter }}
             </button>
         </div>
+        <p>The now filter is: {{ selectedFilter }}</p>
     </div>
 </template>
 

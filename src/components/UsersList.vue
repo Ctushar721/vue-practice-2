@@ -1,17 +1,33 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import axios from 'axios';
 import Filters from './Filters.vue';
-const users_list_og = [
-    { id: 1, name: 'John Doe', department: 'IT' },
-    { id: 2, name: 'Jane Smith', department: 'IT' },
-    { id: 3, name: 'Jim Beam', department: 'Sales' },
-    { id: 3, name: 'Tushar C', department: 'HR' },
-]
-const users = ref(users_list_og);
 
-const filters = ['All', ...new Set(users_list_og.map(user => user.department))];
+const users_list_og = ref([]);
+const users = ref([]);
+const isLoading = ref(true);
+const error = ref(null);
+
+const filters = ref(['All']); // NOTE: it makes a copy and not a reference
 
 const selectedDepartment = ref('All');
+
+async function fetchUsers() {
+    try {
+        const { data } = await axios.request({ // NOTE: We need to allow cross origin requests in BE's server.js
+            method: 'GET',
+            url: 'http://localhost:3000/users'
+        });
+        users_list_og.value = data;
+        users.value = data;
+        // Update filters based on fetched departments
+        filters.value = ['All', ...new Set(data.map(user => user.department))];
+    } catch (err) {
+        error.value = err.message;
+    } finally {
+        isLoading.value = false;
+    }
+}
 
 function updateFilter(filter) {
     selectedDepartment.value = filter;
@@ -21,16 +37,29 @@ function updateFilter(filter) {
 }
 
 function updateList(filter) {
-    users.value = users_list_og.filter(user => ( filter === 'All' ? true : user.department === filter));
+    users.value = users_list_og.value.filter(user => (filter === 'All' ? true : user.department === filter));
 }
+
+onMounted(() => {
+    fetchUsers();
+});
 </script>
 
 <template>
     <div>
         <h1>Users List</h1>
-        <Filters :filters="filters" @update-filter="updateFilter" />
+        <Filters :filters="filters" selectedFilter="selectedDepartment" @update-filter="updateFilter" /> <!-- NOTE: selectedFilter is a static prop, not dynamic -->
         <p>The current filter is: {{ selectedDepartment }}</p>
-        <div class="users-list">
+        
+        <div v-if="isLoading" class="loading">
+            Loading users...
+        </div>
+        
+        <div v-else-if="error" class="error">
+            Error: {{ error }}
+        </div>
+        
+        <div v-else class="users-list">
             <div class="header">
                 <div class="name">Name</div>
                 <div class="department">Department</div>
@@ -75,5 +104,15 @@ li {
 
 li:hover {
     background-color: #33d2eb;
+}
+
+.loading, .error {
+    text-align: center;
+    padding: 20px;
+    font-size: 1.2em;
+}
+
+.error {
+    color: red;
 }
 </style>
